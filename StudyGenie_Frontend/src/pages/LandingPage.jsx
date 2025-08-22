@@ -1,244 +1,599 @@
-import React, { useState } from 'react';
-import '../style/LandingPage.css';
-import { useNavigate } from 'react-router-dom';
-import { FaGlobe, FaRobot, FaBook, FaQuestionCircle, FaPhone, FaEnvelope, FaChevronDown, FaStar } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FaBrain,
+  FaGlobe,
+  FaRobot,
+  FaBook,
+  FaQuestionCircle,
+  FaMapMarkerAlt,
+  FaEnvelope,
+  FaPhoneAlt,
+  FaComments,
+  FaChevronRight,
+  FaChevronDown,
+  FaFacebookF,
+  FaTwitter,
+  FaLinkedinIn,
+  FaInstagram,
+} from "react-icons/fa";
+import Navbar from "../components/Navbar";
+import "../style/LandingPage.css";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import Particles from "react-tsparticles";
+import { tsParticles } from "tsparticles-engine";
 
-function LandingPage() {
+const LandingPage = () => {
   const navigate = useNavigate();
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [openFaq, setOpenFaq] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState(null);
 
-  const testimonials = [
-    { name: 'Alice Johnson', text: 'StudyGenix transformed my learning experience with its AI tutor and custom quizzes!', rating: 5 },
-    { name: 'Bob Smith', text: 'The multilingual support made it easy for me to study in my native language.', rating: 4 },
-    { name: 'Clara Lee', text: 'Interactive tools and quizzes helped me ace my exams!', rating: 5 },
-  ];
+  // Initialize AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      easing: "ease-in-out",
+      once: true,
+      offset: 100,
+    });
 
-  const faqs = [
-    { question: 'What is StudyGenix?', answer: 'StudyGenix is an AI-powered educational platform offering personalized learning, multilingual support, and quiz generation.' },
-    { question: 'How do I create quizzes?', answer: 'Upload your study materials, and our AI will generate custom quizzes tailored to your content.' },
-    { question: 'Is it available in multiple languages?', answer: 'Yes, StudyGenix supports multiple languages for a global learning experience.' },
-  ];
+    // Header scroll effect
+    const handleScroll = () => {
+      const header = document.getElementById("header");
+      if (window.scrollY > 100) {
+        header.classList.add("scrolled");
+      } else {
+        header.classList.remove("scrolled");
+      }
+    };
 
-  const handleSignUpClick = () => {
-    navigate('/signup');
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Particles initialization for tsparticles v3.x
+  const particlesInit = async () => {
+    // Load tsparticles with all features
+    await tsParticles.load({
+      id: "particles-js",
+      options: {
+        particles: {
+          number: { value: 80, density: { enable: true, value_area: 800 } },
+          color: { value: "#9b59b6" },
+          shape: {
+            type: "circle",
+            stroke: { width: 0, color: "#000000" },
+            polygon: { nb_sides: 5 },
+          },
+          opacity: {
+            value: 0.5,
+            random: false,
+            anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false },
+          },
+          size: {
+            value: 3,
+            random: true,
+            anim: { enable: false, speed: 40, size_min: 0.1, sync: false },
+          },
+          line_linked: {
+            enable: true,
+            distance: 150,
+            color: "#9b59b6",
+            opacity: 0.4,
+            width: 1,
+          },
+          move: {
+            enable: true,
+            speed: 3,
+            direction: "none",
+            random: false,
+            straight: false,
+            out_mode: "out",
+            bounce: false,
+            attract: { enable: false, rotateX: 600, rotateY: 1200 },
+          },
+        },
+        interactivity: {
+          detect_on: "canvas",
+          events: {
+            onHover: { enable: true, mode: "grab" },
+            onClick: { enable: true, mode: "push" },
+            resize: true,
+          },
+          modes: {
+            grab: { distance: 140, line_linked: { opacity: 1 } },
+            bubble: {
+              distance: 400,
+              size: 40,
+              duration: 2,
+              opacity: 8,
+              speed: 3,
+            },
+            repulse: { distance: 200, duration: 0.4 },
+            push: { particles_nb: 4 },
+            remove: { particles_nb: 2 },
+          },
+        },
+        retina_detect: true,
+      },
+    });
+  };
+
+  const particlesLoaded = (container) => {
+    console.log("Particles loaded:", container); // Optional: Log to confirm particles loaded
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const toggleAccordion = (index) => {
+    setOpenAccordion(openAccordion === index ? null : index);
   };
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
-    alert('Contact form submitted!'); // Replace with actual API call
+    alert("Contact form submitted!"); // Replace with actual API call
   };
 
-  const nextTestimonial = () => {
-    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-  };
+  const features = [
+    {
+      icon: FaGlobe,
+      title: "Multilingual Support",
+      description:
+        "Learn in your preferred language with seamless translation and localized content.",
+      link: "#",
+    },
+    {
+      icon: FaRobot,
+      title: "AI Tutor",
+      description:
+        "Get personalized guidance from an intelligent AI tutor, available 24/7.",
+      link: "#",
+    },
+    {
+      icon: FaBook,
+      title: "Quiz Generation",
+      description:
+        "Create custom quizzes from your study materials to test your knowledge.",
+      link: "#",
+    },
+    {
+      icon: FaQuestionCircle,
+      title: "Interactive Learning",
+      description:
+        "Engage with flashcards, practice questions, and interactive tools.",
+      link: "#",
+    },
+  ];
 
-  const prevTestimonial = () => {
-    setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-  };
+  const roadmapItems = [
+    {
+      number: 1,
+      title: "Sign Up",
+      description: "Create an account to access all StudyGenix features.",
+    },
+    {
+      number: 2,
+      title: "Upload Materials",
+      description: "Upload your study materials to generate quizzes and notes.",
+    },
+    {
+      number: 3,
+      title: "Learn & Practice",
+      description: "Use the AI tutor and take quizzes to master your subjects.",
+    },
+    {
+      number: 4,
+      title: "Track Progress",
+      description:
+        "Monitor your learning journey with detailed analytics and insights.",
+    },
+  ];
 
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
+  const faqs = [
+    {
+      question: "What is StudyGenix?",
+      answer:
+        "StudyGenix is an AI-powered educational platform offering personalized learning, multilingual support, and quiz generation.",
+    },
+    {
+      question: "How do I create quizzes?",
+      answer:
+        "Upload your study materials, and our AI will generate custom quizzes tailored to your content.",
+    },
+    {
+      question: "Is it available in multiple languages?",
+      answer:
+        "Yes, StudyGenix supports multiple languages for a global learning experience.",
+    },
+    {
+      question: "Can I track my progress?",
+      answer:
+        "Absolutely, StudyGenix provides detailed analytics to monitor your learning progress and performance.",
+    },
+  ];
 
   return (
     <div className="landing-main">
-      {/* Navigation */}
-      <nav className="landing-nav">
-        <div className="nav-logo">StudyGenie</div>
-        <ul className="nav-links">
-          <li><a href="#features" className="nav-link">Features</a></li>
-          <li><a href="#how-it-works" className="nav-link">How It Works</a></li>
-          <li><a href="#why-useful" className="nav-link">Why StudyGenix</a></li>
-          <li><a href="#testimonials" className="nav-link">Testimonials</a></li>
-          <li><a href="#faq" className="nav-link">FAQ</a></li>
-          <li><a href="#contact" className="nav-link">Contact</a></li>
-          <li><button className="nav-btn pulse" onClick={handleSignUpClick}>Sign Up</button></li>
-        </ul>
-      </nav>
+      {/* Header with Navbar */}
+      <header id="header">
+        {/* <Navbar /> */}
+      </header>
 
       {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-content">
-          <h1 className="hero-title slide-in">Unlock Your Learning Potential with StudyGenie</h1>
-          <p className="hero-subtitle slide-in">Personalized AI-powered education with multilingual support, custom quizzes, and interactive tools.</p>
-          <button className="hero-cta pulse" onClick={handleSignUpClick}>Get Started</button>
+      <section id="home" className="hero">
+        <Particles
+          id="particles-js"
+          init={particlesInit}
+          loaded={particlesLoaded}
+          options={{}} // Options are passed via tsParticles.load in particlesInit
+        />
+        <div className="hero-content" data-aos="fade-up">
+          <h1>Unlock Your Learning Potential with StudyGenix</h1>
+          <p>
+            StudyGenix is your personalized guide to academic success. Using
+            advanced AI, we create tailored learning paths, quizzes, and
+            multilingual support to help you excel.
+          </p>
+          <div className="cta-buttons">
+            <a
+              href="#"
+              className="primary-btn"
+              onClick={() => navigate("/signup")}
+            >
+              Start For Free <FaChevronRight className="btn-icon" />
+            </a>
+            <a href="#features" className="secondary-btn">
+              Explore Features <FaChevronDown className="btn-icon" />
+            </a>
+          </div>
         </div>
-        <FaChevronDown className="scroll-indicator" onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })} />
       </section>
 
       {/* Features Section */}
-      <section id="features" className="features-section">
-        <h2 className="section-title slide-in">Our Features</h2>
-        <div className="features-grid">
-          <div className="feature-card animate-on-scroll">
-            <FaGlobe className="feature-icon" />
-            <h3>Multilingual Support</h3>
-            <p>Learn in your preferred language with seamless translation and localized content.</p>
+      <section id="features" className="features">
+        <div className="container">
+          <div className="section-header" data-aos="fade-up">
+            <h2 className="section-title">Intelligent Learning Solutions</h2>
+            <p className="section-subtitle">
+              Discover how StudyGenix transforms your learning journey with
+              innovative AI-powered features.
+            </p>
           </div>
-          <div className="feature-card animate-on-scroll">
-            <FaRobot className="feature-icon" />
-            <h3>AI Tutor</h3>
-            <p>Get personalized guidance from an intelligent AI tutor, available 24/7.</p>
-          </div>
-          <div className="feature-card animate-on-scroll">
-            <FaBook className="feature-icon" />
-            <h3>Quiz Generation</h3>
-            <p>Create custom quizzes from your study materials to test your knowledge.</p>
-          </div>
-          <div className="feature-card animate-on-scroll">
-            <FaQuestionCircle className="feature-icon" />
-            <h3>Interactive Learning</h3>
-            <p>Engage with flashcards, practice questions, and interactive tools.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section id="how-it-works" className="how-it-works-section">
-        <h2 className="section-title slide-in">How It Works</h2>
-        <div className="steps-grid">
-          <div className="step-card animate-on-scroll">
-            <span className="step-number">1</span>
-            <h3>Sign Up</h3>
-            <p>Create an account to access all features.</p>
-          </div>
-          <div className="step-card animate-on-scroll">
-            <span className="step-number">2</span>
-            <h3>Upload Materials</h3>
-            <p>Upload your study materials to generate quizzes and notes.</p>
-          </div>
-          <div className="step-card animate-on-scroll">
-            <span className="step-number">3</span>
-            <h3>Learn & Practice</h3>
-            <p>Use the AI tutor and take quizzes to master your subjects.</p>
+          <div className="features-grid">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={index}
+                  className="feature-card"
+                  data-aos="fade-up"
+                  data-aos-delay={100 + index * 100}
+                >
+                  <div className="feature-icon">
+                    <Icon />
+                  </div>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.description}</p>
+                  <a href={feature.link} className="feature-link">
+                    Learn More <FaChevronRight />
+                  </a>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Why It's Useful Section */}
-      <section id="why-useful" className="why-useful-section">
-        <h2 className="section-title slide-in">Why Choose StudyGenix?</h2>
-        <div className="why-useful-content">
-          <p className="why-useful-text">
-            StudyGenie is your ultimate learning companion, designed to make education accessible, engaging, and
-            personalized. Our AI-driven platform adapts to your needs, offering tools to help you excel in any subject.
-          </p>
-          <ul className="why-useful-list">
-            <li>Learn anytime, anywhere with a user-friendly interface.</li>
-            <li>Supports multiple languages for global accessibility.</li>
-            <li>AI-driven insights to identify and address your weak areas.</li>
-            <li>Custom quizzes generated from your own study materials.</li>
-          </ul>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="testimonials-section">
-        <h2 className="section-title slide-in">What Our Users Say</h2>
-        <div className="testimonial-carousel">
-          <button className="carousel-btn prev" onClick={prevTestimonial} aria-label="Previous testimonial">◄</button>
-          <div className="testimonial-card">
-            <p className="testimonial-text">"{testimonials[currentTestimonial].text}"</p>
-            <div className="testimonial-rating">
-              {Array(testimonials[currentTestimonial].rating).fill().map((_, i) => (
-                <FaStar key={i} className="star-icon" />
+      {/* Roadmap Section */}
+      <section id="roadmap" className="roadmap">
+        <div className="container">
+          <div className="section-header" data-aos="fade-up">
+            <h2 className="section-title">Your Learning Journey</h2>
+            <p className="section-subtitle">
+              Follow our proven roadmap to transform your study challenges into
+              academic success with AI-powered guidance.
+            </p>
+          </div>
+          <div className="roadmap-container">
+            <div className="roadmap-path">
+              <svg viewBox="0 0 1200 300" preserveAspectRatio="none">
+                <path d="M0,150 C300,50 600,250 900,50 L1200,150" />
+              </svg>
+            </div>
+            <div className="roadmap-items">
+              {roadmapItems.map((item, index) => (
+                <div
+                  key={index}
+                  className="roadmap-item"
+                  data-aos="fade-up"
+                  data-aos-delay={100 + index * 100}
+                >
+                  <div className="roadmap-number">{item.number}</div>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </div>
               ))}
             </div>
-            <p className="testimonial-name">{testimonials[currentTestimonial].name}</p>
           </div>
-          <button className="carousel-btn next" onClick={nextTestimonial} aria-label="Next testimonial">►</button>
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="faq-section">
-        <h2 className="section-title slide-in">Frequently Asked Questions</h2>
-        <div className="faq-list">
-          {faqs.map((faq, index) => (
-            <div key={index} className="faq-item">
-              <button
-                className="faq-question"
-                onClick={() => toggleFaq(index)}
-                aria-expanded={openFaq === index}
-                aria-controls={`faq-answer-${index}`}
+      <section id="faq" className="faq">
+        <div className="container">
+          <div className="section-header" data-aos="fade-up">
+            <h2 className="section-title">Frequently Asked Questions</h2>
+            <p className="section-subtitle">
+              Find answers to common questions about StudyGenix’s AI-powered
+              learning platform.
+            </p>
+          </div>
+          <div className="faq-container">
+            {faqs.map((faq, index) => (
+              <div
+                key={index}
+                className={`accordion ${
+                  openAccordion === index ? "active" : ""
+                }`}
+                data-aos="fade-up"
               >
-                {faq.question}
-                <span className="faq-toggle">{openFaq === index ? '−' : '+'}</span>
-              </button>
-              {openFaq === index && (
-                <div id={`faq-answer-${index}`} className="faq-answer">{faq.answer}</div>
-              )}
-            </div>
-          ))}
+                <div
+                  className="accordion-header"
+                  onClick={() => toggleAccordion(index)}
+                >
+                  <h3>{faq.question}</h3>
+                  <FaChevronDown className="accordion-icon" />
+                </div>
+                <div className="accordion-content">
+                  <p>{faq.answer}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="contact-section">
-        <h2 className="section-title slide-in">Get in Touch</h2>
-        <form className="contact-form" onSubmit={handleContactSubmit}>
-          <div className="form-group">
-            <label htmlFor="contact-name">Name</label>
-            <input
-              type="text"
-              id="contact-name"
-              className="contact-input"
-              placeholder="Enter your name"
-              required
-            />
+      <section id="contact" className="contact">
+        <div className="container">
+          <div className="section-header" data-aos="fade-up">
+            <h2 className="section-title">Get in Touch</h2>
+            <p className="section-subtitle">
+              Have questions about StudyGenix? We’re here to help you excel in
+              your learning journey.
+            </p>
           </div>
-          <div className="form-group">
-            <label htmlFor="contact-email">Email</label>
-            <input
-              type="email"
-              id="contact-email"
-              className="contact-input"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="contact-message">Message</label>
-            <textarea
-              id="contact-message"
-              className="contact-input"
-              placeholder="Your message"
-              rows="5"
-              required
-            ></textarea>
-          </div>
-          <button type="submit" className="contact-btn pulse">Send Message</button>
-        </form>
-      </section>
-
-      {/* Footer Section */}
-      <footer className="footer-section">
-        <div className="footer-content">
-          <div className="footer-column">
-            <h3>StudyGenix</h3>
-            <p>Empowering learning through AI and innovation.</p>
-          </div>
-          <div className="footer-column">
-            <h3>Links</h3>
-            <ul>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#how-it-works">How It Works</a></li>
-              <li><a href="#testimonials">Testimonials</a></li>
-              <li><a href="#faq">FAQ</a></li>
-              <li><a href="#contact">Contact</a></li>
-            </ul>
-          </div>
-          <div className="footer-column">
-            <h3>Contact</h3>
-            <p><FaEnvelope /> support@studygenix.com</p>
-            <p><FaPhone /> +1-800-STUDYGENIX</p>
+          <div className="contact-grid">
+            <div className="contact-info" data-aos="fade-up">
+              <div className="contact-item">
+                <div className="contact-icon">
+                  <FaMapMarkerAlt />
+                </div>
+                <div className="contact-text">
+                  <h3>Our Location</h3>
+                  <p>123 Innovation Drive, Tech Park</p>
+                  <p>San Francisco, CA 94107</p>
+                </div>
+              </div>
+              <div className="contact-item">
+                <div className="contact-icon">
+                  <FaEnvelope />
+                </div>
+                <div className="contact-text">
+                  <h3>Email Us</h3>
+                  <a href="mailto:support@studygenix.com">
+                    support@studygenix.com
+                  </a>
+                  <a href="mailto:info@studygenix.com">info@studygenix.com</a>
+                </div>
+              </div>
+              <div className="contact-item">
+                <div className="contact-icon">
+                  <FaPhoneAlt />
+                </div>
+                <div className="contact-text">
+                  <h3>Call Us</h3>
+                  <a href="tel:+14155552671">+1 (415) 555-2671</a>
+                  <p>Mon - Fri: 9AM - 6PM (PST)</p>
+                </div>
+              </div>
+              <div className="contact-item">
+                <div className="contact-icon">
+                  <FaComments />
+                </div>
+                <div className="contact-text">
+                  <h3>Live Chat</h3>
+                  <p>Available 24/7 for urgent queries</p>
+                  <a href="#">Start Chat</a>
+                </div>
+              </div>
+            </div>
+            <div className="contact-form" data-aos="fade-up">
+              <form onSubmit={handleContactSubmit}>
+                <div className="form-group">
+                  <label htmlFor="name" className="form-label">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    className="form-control"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="email" className="form-label">
+                    Your Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    className="form-control"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="subject" className="form-label">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    className="form-control"
+                    placeholder="What is this regarding?"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="message" className="form-label">
+                    Your Message
+                  </label>
+                  <textarea
+                    id="message"
+                    className="form-control"
+                    placeholder="How can we help you?"
+                    required
+                  ></textarea>
+                </div>
+                <button type="submit" className="submit-btn">
+                  Send Message
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-        <p className="footer-copy">&copy; 2025 StudyGenix. All rights reserved.</p>
+      </section>
+
+      {/* Footer */}
+      <footer>
+        <div className="container">
+          <div className="footer-grid">
+            <div className="footer-info">
+              <a href="#" className="footer-logo">
+                <FaBrain /> StudyGenix
+              </a>
+              <p className="footer-description">
+                Empowering students to excel with AI-powered learning and
+                personalized study tools.
+              </p>
+              <div className="social-links">
+                <a href="#" className="social-link">
+                  <FaFacebookF />
+                </a>
+                <a href="#" className="social-link">
+                  <FaTwitter />
+                </a>
+                <a href="#" className="social-link">
+                  <FaLinkedinIn />
+                </a>
+                <a href="#" className="social-link">
+                  <FaInstagram />
+                </a>
+              </div>
+            </div>
+            <div className="footer-links-section">
+              <h3 className="footer-title">Quick Links</h3>
+              <ul className="footer-links">
+                <li>
+                  <a href="#home">
+                    <FaChevronRight /> Home
+                  </a>
+                </li>
+                <li>
+                  <a href="#features">
+                    <FaChevronRight /> Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#roadmap">
+                    <FaChevronRight /> Roadmap
+                  </a>
+                </li>
+                <li>
+                  <a href="#faq">
+                    <FaChevronRight /> FAQ
+                  </a>
+                </li>
+                <li>
+                  <a href="#contact">
+                    <FaChevronRight /> Contact Us
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div className="footer-links-section">
+              <h3 className="footer-title">Our Services</h3>
+              <ul className="footer-links">
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Quiz Generation
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> AI Tutor
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Multilingual Support
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Progress Tracking
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Interactive Tools
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div className="footer-links-section">
+              <h3 className="footer-title">Resources</h3>
+              <ul className="footer-links">
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Blog
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Study Guides
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Webinars
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Success Stories
+                  </a>
+                </li>
+                <li>
+                  <a href="#">
+                    <FaChevronRight /> Learning Tips
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="copyright">
+            &copy; 2025 <a href="#">StudyGenix</a>. All Rights Reserved. Privacy
+            Policy | Terms of Service
+          </div>
+        </div>
       </footer>
     </div>
   );
-}
+};
 
 export default LandingPage;

@@ -13,7 +13,9 @@ function ContactMe() {
           Gmail
         </a>
       </p>
+      
     </footer>
+    
   );
 }
 

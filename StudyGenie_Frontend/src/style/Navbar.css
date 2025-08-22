@@ -1,0 +1,104 @@
+.navbar {
+  background-color: #ffffff;
+  padding: 15px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-logo {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2196f3;
+  margin: 0;
+}
+
+.navbar-links {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 20px;
+}
+
+.navbar-link {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.navbar-link:hover {
+  background-color: #f0f4f8;
+  color: #1976d2;
+}
+
+.navbar-link-active {
+  background-color: #2196f3;
+  color: #fff;
+}
+
+.navbar-logout-btn {
+  background: #ff4d4f;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.navbar-logout-btn:hover {
+  background: #e53935;
+  transform: scale(1.05);
+}
+
+.navbar-logout-icon {
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .navbar-links {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .navbar-link {
+    padding: 10px;
+  }
+
+  .navbar-logout-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
