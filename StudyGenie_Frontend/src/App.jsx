@@ -5,6 +5,7 @@ import ModelPage from "./pages/ModelPage";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import StudyGenieUpload from "./pages/UploadFile"
 
 function App ()
 {
@@ -20,6 +21,10 @@ function App ()
         {
             path:'/signup',
             element:<SignUp />
+        },
+        {
+            path:'/upload',
+            element:<StudyGenieUpload />
         },
         {
             path:'/login',
