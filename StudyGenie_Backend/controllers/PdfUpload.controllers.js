@@ -30,7 +30,7 @@ const HandleUpload = AsyncHandler(async (req, res, next) => {
     formData.append('file', fs.createReadStream(pdfFile.path));
 
     const flaskResponse = await axios.post(
-        "http://localhost:5000/upload",
+        "http://localhost:5000/api/ver1/pdf/uploadmern",
         formData,
         { headers: formData.getHeaders() }
     );
