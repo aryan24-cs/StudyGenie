@@ -1,0 +1,59 @@
+.navigation-main {
+  display: flex;
+  justify-content: space-around;
+  height: 233px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #03090fff;
+  color: #2c3e50;
+}
+
+.navigation-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.header1-1-nav {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffffff;
+  margin: 0;
+}
+
+.header2-2-nav {
+  font-size: 18px;
+  font-weight: 500;
+  color: #ffffffff;
+  margin: 0;
+}
+
+.buttons-wrap-nav .getStarted {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.buttons-wrap-nav .getStarted:hover {
+  background-color: #0056b3;
+}
+
+.Logo-nav-wrap-land {
+  border: 2px solid;
+  width: 50%;
+  background-color: #e9ecef;
+}
+
+.Logo-nav-wrap-land
+{
+  background-image:url("/download.jpeg");
+  background-size: cover;
+  background-position: center; 
+  background-repeat: no-repeat;
+}

@@ -1,0 +1,5 @@
+pip install -U pip
+>> pip install langchain langchain-community langchain-google-genai
+>> pip install unstructured unstructured-inference onnxruntime
+>> pip install pdf2image pytesseract python-dotenv
+pip install "unstructured[pdf]"

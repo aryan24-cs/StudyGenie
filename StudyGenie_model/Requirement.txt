@@ -1,0 +1,13 @@
+flask
+flask-cors
+python-dotenv
+pymongo
+google-generativeai
+langchain
+langchain-community
+langchain-huggingface
+langchain-google-genai
+langchain-core
+faiss-cpu
+pymupdf
+werkzeug

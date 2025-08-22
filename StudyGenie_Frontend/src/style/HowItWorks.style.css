@@ -1,0 +1,73 @@
+.howItWorks-main {
+  padding: 40px 20px;
+  text-align: center;
+  background-color: #03090fff;
+}
+
+.header-HowitWorks-1 {
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 40px;
+  color: #ffffff;
+}
+
+.block-How {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.block-how-1,
+.block-how-2,
+.block-how-3 {
+  background-color: white;
+  padding: 20px;
+  border-radius: 16px;
+  width: 280px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.block-how-1:hover,
+.block-how-2:hover,
+.block-how-3:hover {
+  transform: translateY(-10px);
+}
+
+.block-how-1-header-1,
+.block-how-2-header-1,
+.block-how-3-header-1 {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: #222;
+}
+
+.bloack-how-1-pic-1
+{
+  height: 150px;
+  background-color: #eaeaea;
+  border-radius: 12px;
+  background-image: url('/pdf.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.bloack-how-2-pic-1
+{
+  height: 150px;
+  background-color: #eaeaea;
+  border-radius: 12px;
+  background-image: url('/summarizer2.jpeg');
+  background-size: cover;
+  background-position: center; 
+}
+.bloack-how-3-pic-1
+{
+  height: 150px;
+  background-color: #eaeaea;
+  border-radius: 12px;
+  background-image: url('/interviews.jpeg');
+  background-size: cover;
+  background-position: center;
+}
