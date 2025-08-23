@@ -1,124 +1,238 @@
 import React, { useState } from 'react';
-import '../style/SignUp.css';
-import useUsercred from '../Hooks/useUsercred';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Install react-icons: npm install react-icons
+import axios from 'axios';
+import { FaEnvelope, FaLock, FaKey } from 'react-icons/fa';
 
-function SignUp() {
-  const navigate = useNavigate();
-  const { signup } = useUsercred();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+const SignUpPage = () => {
   const [email, setEmail] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(null);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [showOtpField, setShowOtpField] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
-  const validateForm = () => {
-    const errors = {};
-    if (username.length < 3) errors.username = 'Username must be at least 3 characters';
-    if (!/\S+@\S+\.\S+/.test(email)) errors.email = 'Invalid email format';
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}/.test(password)) {
-      errors.password = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character';
-    }
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSendOTP = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
     try {
-      await signup({ username, email, password, navigate });
-      setError(null);
+      console.log('Send OTP request:', { email, password }); // Debug log
+      const response = await axios.post(
+        'http://localhost:5000/api/ver1/user/send-otp',
+        { email, password },
+        { withCredentials: true }
+      );
+      console.log('Send OTP response:', response.data); // Debug log
+      setSuccess('OTP sent to your email!');
+      setShowOtpField(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to sign up');
-      console.error('Signup error:', err.response?.data);
-    } finally {
-      setIsLoading(false);
+      console.error('Send OTP error:', err.response?.data, err); // Debug log
+      setError(err.response?.data?.message || 'Failed to send OTP');
     }
   };
 
-  const handleSwitchToLogin = () => {
-    navigate('/login');
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      console.log('Verify OTP request:', { email, otp }); // Debug log
+      const response = await axios.post(
+        'http://localhost:5000/api/ver1/user/verify-otp',
+        { email, otp },
+        { withCredentials: true }
+      );
+      console.log('Verify OTP response:', response.data); // Debug log
+      setSuccess('Signup successful! Redirecting to onboarding...');
+      setTimeout(() => navigate('/onboarding'), 2000);
+    } catch (err) {
+      console.error('Verify OTP error:', err.response?.data, err); // Debug log
+      setError(err.response?.data?.message || 'Failed to verify OTP');
+    }
   };
 
   return (
-    <div className="signup-main">
-      <div className="signup-container">
-        <h2 className="signup-title">Create Account</h2>
-        {error && <div className="error-message">{error}</div>}
-        <form className="signup-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              className="signup-input"
-              placeholder="Enter username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              aria-invalid={!!validationErrors.username}
-              aria-describedby="username-error"
-              required
-            />
-            {validationErrors.username && <span id="username-error" className="validation-error">{validationErrors.username}</span>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
+    <div className="signup-page">
+      <div className="form-container">
+        <div className="form-header">
+          <FaKey className="header-icon" />
+          <h2>Join StudyGenix</h2>
+          <p>Create your account to start learning</p>
+        </div>
+
+        <form onSubmit={showOtpField ? handleVerifyOTP : handleSendOTP}>
+          <div className="input-group">
+            <FaEnvelope className="input-icon" />
             <input
               type="email"
-              id="email"
-              className="signup-input"
-              placeholder="Enter email"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={!!validationErrors.email}
-              aria-describedby="email-error"
               required
             />
-            {validationErrors.email && <span id="email-error" className="validation-error">{validationErrors.email}</span>}
           </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <div className="password-wrapper">
+          {!showOtpField && (
+            <div className="input-group">
+              <FaLock className="input-icon" />
               <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                className="signup-input"
-                placeholder="Enter password"
+                type="password"
+                placeholder="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                aria-invalid={!!validationErrors.password}
-                aria-describedby="password-error"
+                onChange={(e) => setPassword(e.target.value.trim())}
                 required
               />
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
             </div>
-            {validationErrors.password && <span id="password-error" className="validation-error">{validationErrors.password}</span>}
-          </div>
-          <button type="submit" className="signup-btn" disabled={isLoading}>
-            {isLoading ? 'Signing Up...' : 'Sign Up'}
+          )}
+          {showOtpField && (
+            <div className="input-group">
+              <FaKey className="input-icon" />
+              <input
+                type="text"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+              />
+            </div>
+          )}
+          {error && <p className="error-message">{error}</p>}
+          {success && <p className="success-message">{success}</p>}
+          <button type="submit" className="submit-btn">
+            {showOtpField ? 'Verify OTP' : 'Send OTP'}
           </button>
-          <div className="switch-link">
-            <span>Already have an account? </span>
-            <button type="button" className="switch-btn" onClick={handleSwitchToLogin}>
-              Log In
-            </button>
-          </div>
         </form>
+
+        <p className="redirect-text">
+          Already have an account? <a href="/login">Login</a>
+        </p>
       </div>
+
+      <style jsx>{`
+        .signup-page {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+          padding: 2rem;
+        }
+
+        .form-container {
+          background: white;
+          padding: 3rem 2rem;
+          border-radius: 20px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+          max-width: 400px;
+          width: 100%;
+          text-align: center;
+        }
+
+        .form-header {
+          margin-bottom: 2rem;
+        }
+
+        .header-icon {
+          font-size: 3rem;
+          color: #3b82f6;
+          margin-bottom: 1rem;
+        }
+
+        h2 {
+          font-size: 2rem;
+          color: #1e3a8a;
+          margin-bottom: 0.5rem;
+        }
+
+        p {
+          color: #64748b;
+          font-size: 1rem;
+        }
+
+        .input-group {
+          position: relative;
+          margin-bottom: 1.5rem;
+        }
+
+        .input-icon {
+          position: absolute;
+          left: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #3b82f6;
+          font-size: 1.2rem;
+        }
+
+        input {
+          width: 100%;
+          padding: 1rem 1rem 1rem 3rem;
+          border: 1px solid rgba(59, 130, 246, 0.2);
+          border-radius: 50px;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+        }
+
+        input:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .error-message {
+          color: #ef4444;
+          font-size: 0.9rem;
+          margin-bottom: 1rem;
+        }
+
+        .success-message {
+          color: #10b981;
+          font-size: 0.9rem;
+          margin-bottom: 1rem;
+        }
+
+        .submit-btn {
+          background: linear-gradient(135deg, #3b82f6, #1e40af);
+          color: white;
+          border: none;
+          padding: 1rem;
+          border-radius: 50px;
+          font-size: 1.1rem;
+          font-weight: 600;
+          cursor: pointer;
+          width: 100%;
+          transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .redirect-text {
+          margin-top: 1.5rem;
+          color: #64748b;
+          font-size: 0.9rem;
+        }
+
+        .redirect-text a {
+          color: #3b82f6;
+          text-decoration: none;
+          font-weight: 600;
+        }
+
+        .redirect-text a:hover {
+          text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+          .form-container {
+            padding: 2rem 1.5rem;
+          }
+        }
+      `}</style>
     </div>
   );
-}
+};
 
-export default SignUp;
+export default SignUpPage;

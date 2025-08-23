@@ -12,6 +12,8 @@ import axios from "axios";
 import path from "path";
 import FormData from "form-data";
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
+
 const app = express();
 
 app.use(
@@ -68,7 +70,7 @@ const UploadOnCloudinary = async (localFilePath) => {
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
     });
-    fs.unlinkSync(localFilePath); // Clean up local file
+    fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
     console.error("Error in uploading to Cloudinary:", error);
@@ -97,7 +99,8 @@ const connectDatabase = async () => {
     const connectionInstance = await mongoose.connect(
       `${process.env.MONGO_URL}/${db_name}`
     );
-    console.log(`Database connected!! ${connectionInstance.connection.host}`);
+    console.log(`Database connected!! Host: ${connectionInstance.connection.host}, Database: ${db_name}`);
+    await User.syncIndexes(); // Sync indexes to match schema
     return connectionInstance;
   } catch (error) {
     console.error("Database connection error:", error);
@@ -105,16 +108,35 @@ const connectDatabase = async () => {
   }
 };
 
+// Nodemailer Configuration
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+const sendMail = async (email, otp) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Your Signup OTP for StudyGenix",
+    text: `Your OTP is ${otp}. It expires in 10 minutes.`,
+  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.response);
+    return info;
+  } catch (error) {
+    console.error('Email sending error:', error);
+    throw error;
+  }
+};
+
 // Mongoose Models
 const UserSchema = new Schema(
   {
-    username: {
-      type: String,
-      required: true,
-      trim: true,
-      lowercase: true,
-      unique: true,
-    },
     password: {
       type: String,
       required: true,
@@ -124,6 +146,22 @@ const UserSchema = new Schema(
       type: String,
       required: true,
       unique: true,
+    },
+    gradeLevel: {
+      type: String,
+      enum: [
+        'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10',
+        'Grade 11', 'Grade 12', 'College', 'Other'
+      ],
+      default: null,
+    },
+    learningInterests: {
+      type: [String],
+      enum: [
+        'Mathematics', 'Science', 'History', 'Literature', 'Computer Science',
+        'Art', 'Music', 'Languages', 'Engineering', 'Business', 'Other'
+      ],
+      default: [],
     },
     history: [
       {
@@ -148,7 +186,7 @@ UserSchema.methods.isPasswordCorrect = async function (enteredPassword) {
 
 UserSchema.methods.GenerateAccessToken = function () {
   return jwt.sign(
-    { id: this._id, email: this.email, username: this.username },
+    { id: this._id, email: this.email },
     process.env.ACCESS_SECRET,
     { expiresIn: process.env.ACCESS_EXP || "1h" }
   );
@@ -161,6 +199,15 @@ UserSchema.methods.GenerateRefreshToken = function () {
 };
 
 const User = mongoose.model("User", UserSchema);
+
+const OTPSchema = new Schema({
+  email: { type: String, required: true, unique: true },
+  otp: { type: String, required: true },
+  hashedPassword: { type: String, required: true },
+  expiresAt: { type: Date, required: true },
+});
+
+const OTP = mongoose.model("OTP", OTPSchema);
 
 const PdfSchema = new Schema(
   {
@@ -189,12 +236,14 @@ const PDFUpload = mongoose.model("PDFHistory", PdfSchema);
 
 // Middleware
 const VerifyUser = AsyncHandler(async (req, res, next) => {
-  const token = req.cookies?.accessToken; // Fixed typo: accesstoken to accessToken
+  const token = req.cookies?.accessToken;
+  console.log('VerifyUser: accessToken=', token); // Debug log
   if (!token) {
     throw new ApiError(401, "No access token found");
   }
   try {
     const decodedToken = jwt.verify(token, process.env.ACCESS_SECRET);
+    console.log('VerifyUser: decodedToken=', decodedToken); // Debug log
     const user = await User.findById(decodedToken.id).select(
       "-refreshToken -password"
     );
@@ -230,65 +279,159 @@ const GenerateAccessRefreshToken = async (userId) => {
   }
 };
 
-const creatingUser = AsyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+const SendOTP = AsyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-  if ([username, email, password].some((field) => !field?.trim())) {
-    throw new ApiError(400, "All fields are required");
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
   }
 
-  const existingUser = await User.findOne({
-    $or: [{ username }, { email }],
-  });
+  console.log('SendOTP request body:', req.body); // Debug log
+
+  const existingUser = await User.findOne({ email });
 
   if (existingUser) {
-    throw new ApiError(409, "User with this username or email already exists");
+    throw new ApiError(409, "User with this email already exists");
   }
 
-  const userObj = {
-    username,
-    email,
-    password,
-  };
+  let otpDoc = await OTP.findOne({ email });
+  if (otpDoc) {
+    await otpDoc.deleteOne();
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   try {
-    const newUser = await User.create(userObj);
-    const createdUser = await User.findById(newUser?._id).select("-password");
+    otpDoc = await OTP.create({
+      email,
+      otp,
+      hashedPassword: password, // Store plaintext password temporarily
+      expiresAt,
+    });
+    console.log('OTP document created:', otpDoc);
 
-    if (!createdUser) {
-      throw new ApiError(500, "Failed to create user");
-    }
+    await sendMail(email, otp);
+    console.log('OTP email sent to:', email);
 
     return res
-      .status(201)
-      .json(new ApiResponse(201, createdUser, "User created successfully"));
+      .status(200)
+      .json(new ApiResponse(200, null, "OTP sent to your email"));
   } catch (error) {
-    if (error.code === 11000) {
-      throw new ApiError(409, "Username or email already exists");
+    console.error('SendOTP error:', error);
+    if (otpDoc) {
+      await otpDoc.deleteOne();
     }
-    throw new ApiError(500, "Failed to create user: " + error.message);
+    throw new ApiError(500, "Failed to send OTP email: " + error.message);
+  }
+});
+
+const VerifyOTP = AsyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    throw new ApiError(400, "Email and OTP are required");
+  }
+
+  console.log('VerifyOTP request body:', req.body); // Debug log
+
+  const otpDoc = await OTP.findOne({ email });
+
+  if (!otpDoc) {
+    throw new ApiError(404, "No OTP found for this email");
+  }
+
+  if (otpDoc.expiresAt < new Date()) {
+    await otpDoc.deleteOne();
+    throw new ApiError(400, "OTP has expired");
+  }
+
+  if (otpDoc.otp !== otp) {
+    throw new ApiError(400, "Invalid OTP");
+  }
+
+  const user = await User.create({
+    email,
+    password: otpDoc.hashedPassword, // Let pre-save hook hash the password
+  });
+  console.log('Created user:', user); // Debug log
+
+  await otpDoc.deleteOne();
+
+  const { accessToken, refreshToken } = await GenerateAccessRefreshToken(
+    user._id
+  );
+
+  const options = {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  return res
+    .status(201)
+    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .json(
+      new ApiResponse(
+        201,
+        { userId: user._id, email: user.email, redirectTo: "/onboarding" },
+        "User created successfully, please complete onboarding"
+      )
+    );
+});
+
+const SaveOnboardingData = AsyncHandler(async (req, res) => {
+  const { gradeLevel, learningInterests } = req.body;
+  const userId = req.user._id;
+
+  if (!userId) {
+    throw new ApiError(401, "No user authenticated");
+  }
+
+  if (!gradeLevel || !learningInterests || !Array.isArray(learningInterests)) {
+    throw new ApiError(400, "Grade level and learning interests are required");
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    user.gradeLevel = gradeLevel;
+    user.learningInterests = learningInterests;
+    await user.save();
+    console.log('Onboarding data saved for user:', user);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "Onboarding data saved successfully"));
+  } catch (error) {
+    console.error("Onboarding save error:", error);
+    throw new ApiError(500, "Failed to save onboarding data: " + error.message);
   }
 });
 
 const LoginUser = AsyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!password || (!username && !email)) {
-    throw new ApiError(
-      400,
-      "Password and either username or email are required"
-    );
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
   }
 
-  const user = await User.findOne({
-    $or: [{ username }, { email }],
-  });
+  console.log('LoginUser request body:', { email, password }); // Debug log
+
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
+  console.log('Stored hashed password:', user.password); // Debug log
   const isPasswordValid = await user.isPasswordCorrect(password);
+  console.log('Password comparison result:', isPasswordValid); // Debug log
+
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid password");
   }
@@ -297,12 +440,12 @@ const LoginUser = AsyncHandler(async (req, res) => {
     user._id
   );
 
-  const finalUser = await User.findById(user._id).select("-password -email");
+  const finalUser = await User.findById(user._id).select("-password");
 
   const options = {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production", // Secure cookies in production
+    secure: process.env.NODE_ENV === "production",
   };
 
   return res
@@ -310,6 +453,19 @@ const LoginUser = AsyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
     .json(new ApiResponse(200, finalUser, "Logged in successfully"));
+});
+
+const TestPassword = AsyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+  console.log('Test password - Stored hash:', user.password);
+  console.log('Test password - Input:', password);
+  const isValid = await bcrypt.compare(password, user.password);
+  console.log('Test password - Result:', isValid);
+  return res.json(new ApiResponse(200, { isValid }, "Password test result"));
 });
 
 const HistoryHandle = AsyncHandler(async (req, res) => {
@@ -333,7 +489,7 @@ const HistoryHandle = AsyncHandler(async (req, res) => {
   user.history.push({
     fileName: req.file.originalname,
     filePath: cloudinaryResult.secure_url,
-    vectorPath: cloudinaryResult.public_id, // Adjust based on actual vector path logic
+    vectorPath: cloudinaryResult.public_id,
   });
   await user.save();
 
@@ -356,12 +512,12 @@ const FetchUserId = AsyncHandler(async (req, res) => {
 
   const userObj = {
     userId: user._id,
-    username: user.username,
+    email: user.email,
   };
 
   return res
     .status(200)
-    .json(new ApiResponse(200, userObj, "User ID fetched successfully"));
+    .json(new ApiResponse(200, userObj, "User details fetched successfully"));
 });
 
 const HandleUpload = AsyncHandler(async (req, res) => {
@@ -420,14 +576,12 @@ const HandleUpload = AsyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to process PDF upload: " + error.message);
   } finally {
     if (fs.existsSync(pdfFile.path)) {
-      fs.unlinkSync(pdfFile.path); // Clean up local file
+      fs.unlinkSync(pdfFile.path);
     }
   }
 });
 
 // Express App Setup
-
-
 app.use(cookieParser());
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ limit: "16kb", extended: true }));
@@ -436,8 +590,11 @@ app.use(express.urlencoded({ limit: "16kb", extended: true }));
 const userRouter = express.Router();
 const pdfRouter = express.Router();
 
-userRouter.post("/signupbackend", creatingUser);
+userRouter.post("/send-otp", SendOTP);
+userRouter.post("/verify-otp", VerifyOTP);
+userRouter.post("/onboarding", VerifyUser, SaveOnboardingData);
 userRouter.post("/loginbackend", LoginUser);
+userRouter.post("/test-password", TestPassword);
 userRouter.post("/history", VerifyUser, upload.single("pdf"), HistoryHandle);
 userRouter.get("/fetchcred", VerifyUser, FetchUserId);
 
@@ -449,7 +606,7 @@ app.use("/api/ver1/pdf", pdfRouter);
 // Start Server
 connectDatabase()
   .then(() => {
-    const port = process.env.PORT || 8080;
+    const port = process.env.PORT || 5000;
     app.listen(port, () => {
       console.log(`Server is LIVE on port ${port}`);
     });
