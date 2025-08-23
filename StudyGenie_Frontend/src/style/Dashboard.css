@@ -1,79 +1,130 @@
 /* Dashboard.css */
-.dashboard-main {
+.dashboard-container {
   display: flex;
-  flex-direction: column;
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-family: "Inter", "Segoe UI", sans-serif;
   color: #333;
-  padding: 20px;
   position: relative;
 }
 
-.dashboard-main::before {
-  content: '';
+.dashboard-container::before {
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle, rgba(33, 150, 243, 0.1) 1px, transparent 1px);
+  background: radial-gradient(
+    circle,
+    rgba(33, 150, 243, 0.1) 1px,
+    transparent 1px
+  );
   background-size: 20px 20px;
   opacity: 0.3;
   z-index: -1;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Reuse Sidebar from StudyGenieUpload.css */
+.sidebar {
+  width: 256px;
   background-color: #ffffff;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid #e5e7eb;
 }
 
-.header-left {
+.sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.logo-container {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
 }
 
-.user-icon {
-  font-size: 48px;
-  color: #2196f3;
-}
-
-.section-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.section-icon {
-  color: #2196f3;
-}
-
-.logout-btn {
-  background: #ff4d4f;
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(90deg, #7c3aed, #3b82f6);
   border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.logo-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.logo-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.sidebar-nav {
+  margin-top: 24px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
   font-size: 16px;
   font-weight: 500;
+  color: #374151;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.logout-btn:hover {
-  background: #e53935;
-  transform: scale(1.05);
+.sidebar-item:hover {
+  background-color: #f9fafb;
+}
+
+.sidebar-item.active {
+  background-color: #f3e8ff;
+  border-right: 2px solid #7c3aed;
+  color: #6d28d9;
+}
+
+.sidebar-icon {
+  font-size: 20px;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.content-wrapper {
+  padding: 32px;
+}
+
+.content-inner {
+  max-width: 896px;
+  margin: 0 auto;
+}
+
+.header-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.section-icon {
+  color: #7c3aed;
 }
 
 .stats-grid {
@@ -87,39 +138,38 @@
   background-color: #ffffff;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .stat-icon {
   font-size: 40px;
   margin-bottom: 10px;
+  color: #7c3aed;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #555;
+  color: #6b7280;
   margin-bottom: 5px;
 }
 
 .stat-value {
   font-size: 24px;
   font-weight: 600;
-  color: #333;
+  color: #111827;
 }
 
 .main-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 30px;
-  max-width: 1400px;
-  margin: 0 auto;
 }
 
 .left-column,
@@ -129,17 +179,16 @@
   gap: 30px;
 }
 
-.subjects-card,
-.heatmap-card,
-.goal-card,
-.history-card,
-.level-card,
-.achievements-card,
-.activity-card {
+.file-list {
+  margin-top: 32px;
+}
+
+.file-list-container {
   background-color: #ffffff;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
 }
 
 .subject-item {
@@ -156,54 +205,52 @@
 .subject-name {
   font-size: 18px;
   font-weight: 500;
-  color: #333;
+  color: #111827;
 }
 
 .subject-stats {
   display: flex;
   gap: 20px;
   font-size: 14px;
-  color: #555;
+  color: #6b7280;
 }
 
 .progress-bar {
   height: 8px;
-  background-color: #f0f4f8;
+  background-color: #e5e7eb;
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #2196f3, #1e88e5);
+  background: linear-gradient(90deg, #7c3aed, #3b82f6);
   transition: width 0.5s ease;
 }
 
-.view-all-btn {
-  display: block;
-  margin: 20px auto 0;
-  background: #2196f3;
-  color: #fff;
+.process-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  background: linear-gradient(90deg, #7c3aed, #3b82f6);
+  color: #ffffff;
   border: none;
-  padding: 10px 20px;
   border-radius: 8px;
   font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.view-all-btn:hover {
-  background: #1976d2;
+.process-button:hover {
+  background: linear-gradient(90deg, #6d28d9, #2563eb);
   transform: scale(1.05);
-}
-
-.heatmap-card {
-  text-align: center;
 }
 
 .heatmap-subtitle {
   font-size: 14px;
-  color: #555;
+  color: #6b7280;
   margin-bottom: 20px;
 }
 
@@ -230,23 +277,23 @@
 }
 
 .heatmap-day.activity-0 {
-  background-color: #f0f4f8;
+  background-color: #ebedf0;
 }
 
 .heatmap-day.activity-1 {
-  background-color: rgba(33, 150, 243, 0.2);
+  background-color: #c6e48b;
 }
 
 .heatmap-day.activity-2 {
-  background-color: rgba(33, 150, 243, 0.4);
+  background-color: #7bc96f;
 }
 
 .heatmap-day.activity-3 {
-  background-color: rgba(33, 150, 243, 0.6);
+  background-color: #239a3b;
 }
 
 .heatmap-day.activity-4 {
-  background-color: rgba(33, 150, 243, 0.8);
+  background-color: #196127;
 }
 
 .heatmap-legend {
@@ -256,7 +303,7 @@
   gap: 10px;
   margin-top: 20px;
   font-size: 12px;
-  color: #555;
+  color: #6b7280;
 }
 
 .legend-squares {
@@ -270,29 +317,11 @@
   border-radius: 3px;
 }
 
-.goal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.goal-percentage {
-  font-size: 14px;
-  color: #2196f3;
-  font-weight: 500;
-}
-
-.goal-remaining {
-  font-size: 14px;
-  color: #555;
-  margin-top: 10px;
-}
-
 .level-card {
   text-align: center;
-  background: linear-gradient(135deg, #2196f3, #1e88e5);
+  background: linear-gradient(135deg, #7c3aed, #3b82f6);
   color: #fff;
+  padding: 30px;
 }
 
 .level-icon {
@@ -319,33 +348,8 @@
   margin-top: 10px;
 }
 
-.achievement-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-.achievement-icon {
-  font-size: 24px;
-}
-
-.achievement-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333;
-}
-
-.achievement-description {
-  font-size: 14px;
-  color: #555;
-}
-
 .activity-item {
-  border-left: 2px solid #2196f3;
+  border-left: 2px solid #7c3aed;
   padding-left: 15px;
   margin-bottom: 15px;
 }
@@ -354,12 +358,12 @@
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #555;
+  color: #6b7280;
   margin-bottom: 5px;
 }
 
 .activity-score {
-  color: #2196f3;
+  color: #7c3aed;
   font-weight: 500;
 }
 
@@ -372,64 +376,67 @@
 .history-table td {
   padding: 15px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .history-table th {
-  background-color: #f9f9f9;
+  background-color: #f9fafb;
   font-weight: 600;
-  color: #333;
+  color: #111827;
 }
 
 .view-btn,
 .delete-btn {
   background: none;
   border: none;
-  color: #2196f3;
   cursor: pointer;
   margin-right: 15px;
   font-size: 16px;
   transition: color 0.3s ease;
 }
 
+.view-btn {
+  color: #7c3aed;
+}
+
 .delete-btn {
-  color: #ff4d4f;
+  color: #ef4444;
 }
 
 .view-btn:hover {
-  color: #1976d2;
+  color: #6d28d9;
 }
 
 .delete-btn:hover {
-  color: #e53935;
+  color: #dc2626;
 }
 
 .no-history {
   text-align: center;
   font-size: 16px;
-  color: #555;
+  color: #6b7280;
 }
 
 .dashboard-footer {
   text-align: center;
   font-size: 14px;
-  color: #555;
+  color: #6b7280;
   margin-top: 30px;
   padding: 20px;
   background-color: #ffffff;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid #e5e7eb;
 }
 
 .dashboard-loading,
 .dashboard-error {
   text-align: center;
   font-size: 18px;
-  color: #333;
+  color: #111827;
   margin-top: 50px;
 }
 
 .dashboard-error {
-  color: #ff4d4f;
+  color: #ef4444;
 }
 
 @keyframes slideIn {
@@ -437,24 +444,9 @@
     opacity: 0;
     transform: translateX(-50px);
   }
-
   to {
     opacity: 1;
     transform: translateX(0);
-  }
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4);
-  }
-
-  70% {
-    box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
-  }
-
-  100% {
-    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
   }
 }
 
@@ -469,10 +461,6 @@
   transform: translateY(0);
 }
 
-.pulse {
-  animation: pulse 2s infinite;
-}
-
 /* Responsive Design */
 @media (max-width: 1024px) {
   .main-grid {
@@ -481,9 +469,8 @@
 }
 
 @media (max-width: 768px) {
-  .dashboard-header {
-    flex-direction: column;
-    gap: 15px;
+  .content-wrapper {
+    padding: 16px;
   }
 
   .stats-grid {
@@ -493,5 +480,15 @@
   .history-table th,
   .history-table td {
     padding: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-title {
+    font-size: 24px;
+  }
+
+  .heatmap-grid {
+    grid-template-columns: repeat(6, 1fr);
   }
 }
