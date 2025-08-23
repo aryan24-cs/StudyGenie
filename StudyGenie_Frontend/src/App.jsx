@@ -6,6 +6,7 @@ import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import StudyGenieUpload from "./pages/UploadFile"
+import MapCareer from "./pages/MapCareer";
 
 function App ()
 {
@@ -33,6 +34,10 @@ function App ()
         {
             path:'/dashboard',
             element:<Dashboard />
+        },
+        {
+            path:'/career',
+            element:<MapCareer />
         }
 
     ])
