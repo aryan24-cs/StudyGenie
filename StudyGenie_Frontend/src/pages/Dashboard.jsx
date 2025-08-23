@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import "../style/Dashboard.css";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaBrain,
@@ -11,107 +10,93 @@ import {
   FaChartBar,
   FaTrophy,
   FaEye,
-  FaTrash
+  FaTrash,
+  FaHome,
+  FaUpload,
+  FaBook,
+  FaUser,
+  FaCog,
 } from "react-icons/fa";
-import Navbar from "../components/Navbar"; // Import the Navbar component
+import "../style/Dashboard.css";
+
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+  return null;
+};
 
 function Dashboard() {
   const navigate = useNavigate();
-  const [history, setHistory] = useState([
-    {
-      _id: "1",
-      fileName: "Math_Notes.pdf",
-      filePath: "/uploads/math_notes.pdf",
-      uploadDate: "2025-08-20T10:00:00Z",
-    },
-    {
-      _id: "2",
-      fileName: "Physics_Quiz.pdf",
-      filePath: "/uploads/physics_quiz.pdf",
-      uploadDate: "2025-08-19T14:30:00Z",
-    },
-    {
-      _id: "3",
-      fileName: "Chemistry_Chapter1.pdf",
-      filePath: "/uploads/chem_ch1.pdf",
-      uploadDate: "2025-08-18T09:15:00Z",
-    },
-  ]);
+  const [user, setUser] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [quizResults, setQuizResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Static user data
-  const user = {
-    username: "StudyMaster",
-    email: "studymaster@example.com",
-    createdAt: "2025-01-15T00:00:00Z",
-  };
+  // Fetch user data and history
+  const fetchUserData = useCallback(async () => {
+    const accessToken = getCookie("accessToken");
+    if (!accessToken) {
+      setError("Please log in to view your dashboard.");
+      setLoading(false);
+      navigate("/login");
+      return;
+    }
 
-  // Mock data for stats, subjects, activity, and achievements
-  const userStats = {
-    totalCards: 847,
-    studyStreak: 12,
-    accuracy: 78,
-    hoursStudied: 24.5,
-    weeklyGoal: 20,
-    level: 15,
-    xp: 3240,
-  };
+    try {
+      // Fetch user info
+      const userResponse = await fetch(
+        "http://localhost:5000/api/ver1/user/fetchcred",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch user data");
+      }
+      const userData = await userResponse.json();
+      setUser(userData.data);
 
-  const subjects = [
-    { name: "Mathematics", progress: 85, cards: 234, accuracy: 82 },
-    { name: "Physics", progress: 72, cards: 189, accuracy: 75 },
-    { name: "Chemistry", progress: 91, cards: 156, accuracy: 89 },
-    { name: "Biology", progress: 64, cards: 203, accuracy: 71 },
-    { name: "History", progress: 78, cards: 65, accuracy: 80 },
-  ];
+      // Fetch history and quiz results
+      const historyResponse = await fetch(
+        "http://localhost:5000/api/ver1/user/history",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      if (!historyResponse.ok) {
+        throw new Error("Failed to fetch history");
+      }
+      const historyData = await historyResponse.json();
+      setHistory(historyData.data || []);
 
-  const recentActivity = [
-    {
-      date: "Today",
-      activity: "Completed 25 flashcards in Physics",
-      score: "+120 XP",
-    },
-    {
-      date: "Yesterday",
-      activity: "Perfect score on Chemistry quiz",
-      score: "+200 XP",
-    },
-    { date: "2 days ago", activity: "Studied for 2.5 hours", score: "+150 XP" },
-    {
-      date: "3 days ago",
-      activity: "Unlocked new Math chapter",
-      score: "+100 XP",
-    },
-  ];
+      // Fetch quiz results (assuming an endpoint to retrieve all quiz results)
+      const quizResponse = await fetch(
+        "http://localhost:5000/api/ver1/pdf/quiz-results",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      if (!quizResponse.ok) {
+        throw new Error("Failed to fetch quiz results");
+      }
+      const quizData = await quizResponse.json();
+      setQuizResults(quizData.data || []);
 
-  const achievements = [
-    {
-      title: "Study Streak",
-      description: "12 days in a row",
-      icon: FaFire,
-      color: "#ff4d4f",
-    },
-    {
-      title: "Quiz Master",
-      description: "10 perfect scores",
-      icon: FaTrophy,
-      color: "#f4b400",
-    },
-    {
-      title: "Speed Learner",
-      description: "100 cards in 1 hour",
-      icon: FaBolt,
-      color: "#666",
-    },
-    {
-      title: "Knowledge Seeker",
-      description: "5 subjects mastered",
-      icon: FaBrain,
-      color: "#2196f3",
-    },
-  ];
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      if (err.message.includes("Unauthorized")) {
+        navigate("/login");
+      }
+    }
+  }, [navigate]);
 
-  // Heatmap data for past 12 weeks
-  const generateHeatmapData = () => {
+  // Generate heatmap data
+  const generateHeatmapData = useCallback(() => {
     const data = [];
     const today = new Date();
     for (let week = 11; week >= 0; week--) {
@@ -119,22 +104,25 @@ function Dashboard() {
       for (let day = 0; day < 7; day++) {
         const date = new Date(today);
         date.setDate(date.getDate() - (week * 7 + day));
-        const activity = Math.floor(Math.random() * 5);
+        const quizOnDate = quizResults.filter(
+          (quiz) =>
+            new Date(quiz.timestamp).toISOString().split("T")[0] ===
+            date.toISOString().split("T")[0]
+        );
+        const activity = Math.min(quizOnDate.length, 4); // Cap at 4 for intensity
         weekData.push({
           date: date.toISOString().split("T")[0],
           activity,
-          sessions: activity * 2,
+          sessions: quizOnDate.length,
         });
       }
       data.push(weekData);
     }
     return data;
-  };
-
-  const heatmapData = generateHeatmapData();
+  }, [quizResults]);
 
   useEffect(() => {
-    // Scroll animations
+    fetchUserData();
     const elements = document.querySelectorAll(".animate-on-scroll");
     const observer = new IntersectionObserver(
       (entries) => {
@@ -148,276 +136,379 @@ function Dashboard() {
     );
     elements.forEach((element) => observer.observe(element));
     return () => elements.forEach((element) => observer.unobserve(element));
-  }, []);
+  }, [fetchUserData]);
 
-  const handleDeleteItem = (itemId) => {
+  const handleDeleteItem = async (vectorPath) => {
     if (window.confirm("Are you sure you want to delete this history item?")) {
-      setHistory(history.filter((item) => item._id !== itemId));
+      try {
+        const accessToken = getCookie("accessToken");
+        const response = await fetch(
+          "http://localhost:5000/api/ver1/pdf/delete",
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ vectorPath }),
+          }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to delete history item");
+        }
+        setHistory(history.filter((item) => item.vectorPath !== vectorPath));
+      } catch (err) {
+        setError(err.message);
+      }
     }
   };
 
   const handleViewItem = (item) => {
-    alert(`Viewing: ${item.fileName}\nPath: ${item.filePath}`);
+    window.open(item.filePath, "_blank");
   };
 
+  const sidebarItems = [
+    { id: "dashboard", icon: FaHome, label: "Dashboard", path: "/dashboard" },
+    {
+      id: "upload",
+      icon: FaUpload,
+      label: "Upload Materials",
+      path: "/upload",
+    },
+    { id: "study", icon: FaBook, label: "Study Guides", path: "/study" },
+    { id: "tutor", icon: FaBrain, label: "AI Tutor", path: "/tutor" },
+    { id: "progress", icon: FaChartBar, label: "Progress", path: "/progress" },
+    { id: "profile", icon: FaUser, label: "Profile", path: "/profile" },
+    { id: "settings", icon: FaCog, label: "Settings", path: "/settings" },
+  ];
+
+  // Calculate dynamic stats
+  const userStats = {
+    totalCards: quizResults.reduce((sum, quiz) => sum + quiz.total, 0),
+    studyStreak: calculateStudyStreak(quizResults),
+    accuracy: quizResults.length
+      ? (
+          quizResults.reduce((sum, quiz) => sum + quiz.percentage, 0) /
+          quizResults.length
+        ).toFixed(2)
+      : 0,
+    hoursStudied: (quizResults.length * 0.5).toFixed(1), // Estimate 30 min per quiz
+    weeklyGoal: 20,
+    level: Math.floor(quizResults.length / 5) + 1,
+    xp: quizResults.length * 100,
+  };
+
+  function calculateStudyStreak(results) {
+    if (!results.length) return 0;
+    let streak = 0;
+    const sortedDates = [
+      ...new Set(
+        results.map((r) => new Date(r.timestamp).toISOString().split("T")[0])
+      ),
+    ].sort((a, b) => new Date(b) - new Date(a));
+    const today = new Date().toISOString().split("T")[0];
+    let current = new Date(today);
+    for (let date of sortedDates) {
+      const quizDate = new Date(date);
+      if (current.toISOString().split("T")[0] === date) {
+        streak++;
+        current.setDate(current.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  // Dynamic subjects based on quiz results
+  const subjects = Array.from(
+    new Set(history.map((item) => item.fileName.split("_")[0]))
+  ).map((name, index) => ({
+    name,
+    progress: quizResults[index % quizResults.length]?.percentage || 50,
+    cards: quizResults[index % quizResults.length]?.total || 10,
+    accuracy: quizResults[index % quizResults.length]?.percentage || 70,
+  }));
+
+  // Recent activity from quiz results
+  const recentActivity = quizResults.slice(0, 4).map((quiz, index) => ({
+    date: new Date(quiz.timestamp).toLocaleDateString(),
+    activity: `Completed quiz for ${
+      history.find((h) => h.vectorPath === quiz.vectorPath)?.fileName ||
+      "Unknown File"
+    }`,
+    score: `+${quiz.score * 20} XP`,
+  }));
+
+  const heatmapData = generateHeatmapData();
+
+  if (loading) {
+    return <div className="dashboard-loading">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="dashboard-error">{error}</div>;
+  }
+
   return (
-    <div className="dashboard-main">
-      {/* Navbar */}
-      <Navbar />
-
-      {/* Overview Stats */}
-      <section className="overview-section">
-        <h2 className="section-title slide-in">Your Progress</h2>
-        <div className="stats-grid">
-          <div className="stat-card animate-on-scroll">
-            <FaBrain className="stat-icon" />
-            <p className="stat-label">Total Cards</p>
-            <p className="stat-value">{userStats.totalCards}</p>
-          </div>
-          <div className="stat-card animate-on-scroll">
-            <FaFire className="stat-icon" style={{ color: "#ff4d4f" }} />
-            <p className="stat-label">Study Streak</p>
-            <p className="stat-value">{userStats.studyStreak} days</p>
-          </div>
-          <div className="stat-card animate-on-scroll">
-            <FaBullseye className="stat-icon" style={{ color: "#4caf50" }} />
-            <p className="stat-label">Accuracy</p>
-            <p className="stat-value">{userStats.accuracy}%</p>
-          </div>
-          <div className="stat-card animate-on-scroll">
-            <FaClock className="stat-icon" style={{ color: "#666" }} />
-            <p className="stat-label">Hours Studied</p>
-            <p className="stat-value">{userStats.hoursStudied}</p>
-          </div>
-        </div>
-      </section>
-
-      <div className="main格">
-        {/* Left Column */}
-        <div className="left-column">
-          {/* Subject Progress */}
-          <section className="subjects-section">
-            <h2 className="section-title slide-in">
-              <FaChartBar className="section-icon" /> Subject Progress
-            </h2>
-            <div className="subjects-card animate-on-scroll">
-              {subjects.map((subject, index) => (
-                <div key={index} className="subject-item">
-                  <div className="subject-header">
-                    <span className="subject-name">{subject.name}</span>
-                    <div className="subject-stats">
-                      <span>{subject.cards} cards</span>
-                      <span>{subject.accuracy}% accuracy</span>
-                    </div>
-                  </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${subject.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-              <button className="view-all-btn">View All</button>
+    <div className="dashboard-container">
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <div className="logo-container">
+            <div className="logo-icon">
+              <FaBrain />
             </div>
-          </section>
-
-          {/* Study Heatmap */}
-          <section className="heatmap-section">
-            <h2 className="section-title slide-in">Study Activity</h2>
-            <div className="heatmap-card animate-on-scroll">
-              <p className="heatmap-subtitle">Past 12 weeks</p>
-              <div className="heatmap-grid">
-                {heatmapData.map((week, weekIndex) => (
-                  <div key={weekIndex} className="heatmap-week">
-                    {week.map((day, dayIndex) => (
-                      <div
-                        key={dayIndex}
-                        className={`heatmap-day activity-${day.activity}`}
-                        title={`${day.date}: ${day.sessions} sessions`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-              <div className="heatmap-legend">
-                <span>Less</span>
-                <div className="legend-squares">
-                  {[0, 1, 2, 3, 4].map((level) => (
-                    <div
-                      key={level}
-                      className={`legend-square activity-${level}`}
-                    />
-                  ))}
-                </div>
-                <span>More</span>
-              </div>
-            </div>
-          </section>
-
-          {/* Weekly Goal */}
-          <section className="goal-section">
-            <h2 className="section-title slide-in">
-              <FaBullseye className="section-icon" /> Weekly Goal
-            </h2>
-            <div className="goal-card animate-on-scroll">
-              <div className="goal-header">
-                <span>
-                  {userStats.hoursStudied} / {userStats.weeklyGoal} hours
-                </span>
-                <span className="goal-percentage">
-                  {Math.round(
-                    (userStats.hoursStudied / userStats.weeklyGoal) * 100
-                  )}
-                  % complete
-                </span>
-              </div>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{
-                    width: `${
-                      (userStats.hoursStudied / userStats.weeklyGoal) * 100
-                    }%`,
-                  }}
-                ></div>
-              </div>
-              <p className="goal-remaining">
-                {Math.max(
-                  0,
-                  userStats.weeklyGoal - userStats.hoursStudied
-                ).toFixed(1)}{" "}
-                hours remaining
-              </p>
-            </div>
-          </section>
-
-          {/* History Section */}
-          <section className="history-section">
-            <h2 className="section-title slide-in">
-              <FaCalendar className="section-icon" /> Upload History
-            </h2>
-            <div className="history-card animate-on-scroll">
-              {history.length === 0 ? (
-                <p className="no-history">
-                  No history items found. Upload your first study material!
+            <div>
+              <h1 className="logo-title">StudyGenix</h1>
+              <p className="logo-subtitle">Smart Learning</p>
+              {user && (
+                <p className="text-sm text-gray-600">
+                  Welcome, {user.username}
                 </p>
-              ) : (
-                <table className="history-table">
-                  <thead>
-                    <tr>
-                      <th>File Name</th>
-                      <th>Upload Date</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map((item) => (
-                      <tr key={item._id}>
-                        <td>{item.fileName}</td>
-                        <td>
-                          {new Date(item.uploadDate).toLocaleDateString()}
-                        </td>
-                        <td>
-                          <button
-                            className="view-btn"
-                            onClick={() => handleViewItem(item)}
-                            aria-label={`View ${item.fileName}`}
-                          >
-                            <FaEye /> View
-                          </button>
-                          <button
-                            className="delete-btn"
-                            onClick={() => handleDeleteItem(item._id)}
-                            aria-label={`Delete ${item.fileName}`}
-                          >
-                            <FaTrash /> Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               )}
             </div>
-          </section>
+          </div>
         </div>
-
-        {/* Right Column */}
-        <div className="right-column">
-          {/* Level & XP */}
-          <section className="level-section">
-            <h2 className="section-title slide-in">
-              <FaTrophy className="section-icon" /> Level & XP
-            </h2>
-            <div className="level-card animate-on-scroll">
-              <div className="level-icon">
-                <FaTrophy />
+        <nav className="sidebar-nav">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                navigate(item.path);
+              }}
+              className={`sidebar-item ${
+                activeTab === item.id ? "active" : ""
+              }`}
+            >
+              <item.icon className="sidebar-icon" />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+      <div className="main-content">
+        <div className="content-wrapper">
+          <div className="content-inner">
+            <section className="overview-section">
+              <h2 className="header-title slide-in">Your Progress</h2>
+              <div className="stats-grid">
+                <div className="stat-card animate-on-scroll">
+                  <FaBrain className="stat-icon" />
+                  <p className="stat-label">Total Quizzes</p>
+                  <p className="stat-value">{quizResults.length}</p>
+                </div>
+                <div className="stat-card animate-on-scroll">
+                  <FaFire className="stat-icon" style={{ color: "#ff4d4f" }} />
+                  <p className="stat-label">Study Streak</p>
+                  <p className="stat-value">{userStats.studyStreak} days</p>
+                </div>
+                <div className="stat-card animate-on-scroll">
+                  <FaBullseye
+                    className="stat-icon"
+                    style={{ color: "#4caf50" }}
+                  />
+                  <p className="stat-label">Average Accuracy</p>
+                  <p className="stat-value">{userStats.accuracy}%</p>
+                </div>
+                <div className="stat-card animate-on-scroll">
+                  <FaClock className="stat-icon" style={{ color: "#666" }} />
+                  <p className="stat-label">Hours Studied</p>
+                  <p className="stat-value">{userStats.hoursStudied}</p>
+                </div>
               </div>
-              <h3>Level {userStats.level}</h3>
-              <p>{userStats.xp} XP</p>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${(userStats.xp % 1000) / 10}%` }}
-                ></div>
-              </div>
-              <p className="xp-remaining">
-                {1000 - (userStats.xp % 1000)} XP to next level
-              </p>
-            </div>
-          </section>
+            </section>
 
-          {/* Achievements */}
-          <section className="achievements-section">
-            <h2 className="section-title slide-in">
-              <FaTrophy className="section-icon" /> Achievements
-            </h2>
-            <div className="achievements-card animate-on-scroll">
-              {achievements.map((achievement, index) => {
-                const Icon = achievement.icon;
-                return (
-                  <div key={index} className="achievement-item">
-                    <Icon
-                      className="achievement-icon"
-                      style={{ color: achievement.color }}
-                    />
-                    <div>
-                      <p className="achievement-title">{achievement.title}</p>
-                      <p className="achievement-description">
-                        {achievement.description}
+            <div className="main-grid">
+              <div className="left-column">
+                <section className="subjects-section">
+                  <h2 className="header-title slide-in">
+                    <FaChartBar className="section-icon" /> Subject Progress
+                  </h2>
+                  <div className="file-list animate-on-scroll">
+                    <div className="file-list-container">
+                      {subjects.map((subject, index) => (
+                        <div key={index} className="subject-item">
+                          <div className="subject-header">
+                            <span className="subject-name">{subject.name}</span>
+                            <div className="subject-stats">
+                              <span>{subject.cards} questions</span>
+                              <span>{subject.accuracy}% accuracy</span>
+                            </div>
+                          </div>
+                          <div className="progress-bar">
+                            <div
+                              className="progress-fill"
+                              style={{ width: `${subject.progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
+                      {subjects.length === 0 && (
+                        <p className="no-history">
+                          No subjects found. Upload study materials to get
+                          started!
+                        </p>
+                      )}
+                      <button className="process-button">View All</button>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="heatmap-section">
+                  <h2 className="header-title slide-in">Study Activity</h2>
+                  <div className="file-list animate-on-scroll">
+                    <div className="file-list-container">
+                      <p className="heatmap-subtitle">
+                        Past 12 weeks of quiz activity
+                      </p>
+                      <div className="heatmap-grid">
+                        {heatmapData.map((week, weekIndex) => (
+                          <div key={weekIndex} className="heatmap-week">
+                            {week.map((day, dayIndex) => (
+                              <div
+                                key={dayIndex}
+                                className={`heatmap-day activity-${day.activity}`}
+                                title={`${day.date}: ${day.sessions} quiz${
+                                  day.sessions === 1 ? "" : "zes"
+                                } completed`}
+                              />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="heatmap-legend">
+                        <span>Less</span>
+                        <div className="legend-squares">
+                          {[0, 1, 2, 3, 4].map((level) => (
+                            <div
+                              key={level}
+                              className={`legend-square activity-${level}`}
+                            />
+                          ))}
+                        </div>
+                        <span>More</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="history-section">
+                  <h2 className="header-title slide-in">
+                    <FaCalendar className="section-icon" /> Upload History
+                  </h2>
+                  <div className="file-list animate-on-scroll">
+                    <div className="file-list-container">
+                      {history.length === 0 ? (
+                        <p className="no-history">
+                          No history items found. Upload your first study
+                          material!
+                        </p>
+                      ) : (
+                        <table className="history-table">
+                          <thead>
+                            <tr>
+                              <th>File Name</th>
+                              <th>Upload Date</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {history.map((item) => (
+                              <tr key={item.vectorPath}>
+                                <td>{item.fileName}</td>
+                                <td>
+                                  {new Date(
+                                    item.createdAt
+                                  ).toLocaleDateString()}
+                                </td>
+                                <td>
+                                  <button
+                                    className="view-btn"
+                                    onClick={() => handleViewItem(item)}
+                                    aria-label={`View ${item.fileName}`}
+                                  >
+                                    <FaEye /> View
+                                  </button>
+                                  <button
+                                    className="delete-btn"
+                                    onClick={() =>
+                                      handleDeleteItem(item.vectorPath)
+                                    }
+                                    aria-label={`Delete ${item.fileName}`}
+                                  >
+                                    <FaTrash /> Delete
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div className="right-column">
+                <section className="level-section">
+                  <h2 className="header-title slide-in">
+                    <FaTrophy className="section-icon" /> Level & XP
+                  </h2>
+                  <div className="file-list animate-on-scroll">
+                    <div className="file-list-container level-card">
+                      <div className="level-icon">
+                        <FaTrophy />
+                      </div>
+                      <h3>Level {userStats.level}</h3>
+                      <p>{userStats.xp} XP</p>
+                      <div className="progress-bar">
+                        <div
+                          className="progress-fill"
+                          style={{ width: `${(userStats.xp % 1000) / 10}%` }}
+                        ></div>
+                      </div>
+                      <p className="xp-remaining">
+                        {1000 - (userStats.xp % 1000)} XP to next level
                       </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </section>
+                </section>
 
-          {/* Recent Activity */}
-          <section className="activity-section">
-            <h2 className="section-title slide-in">
-              <FaClock className="section-icon" /> Recent Activity
-            </h2>
-            <div className="activity-card animate-on-scroll">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="activity-item">
-                  <div className="activity-details">
-                    <span className="activity-date">{activity.date}</span>
-                    <span className="activity-score">{activity.score}</span>
+                <section className="activity-section">
+                  <h2 className="header-title slide-in">
+                    <FaClock className="section-icon" /> Recent Activity
+                  </h2>
+                  <div className="file-list animate-on-scroll">
+                    <div className="file-list-container">
+                      {recentActivity.map((activity, index) => (
+                        <div key={index} className="activity-item">
+                          <div className="activity-details">
+                            <span className="activity-date">
+                              {activity.date}
+                            </span>
+                            <span className="activity-score">
+                              {activity.score}
+                            </span>
+                          </div>
+                          <p>{activity.activity}</p>
+                        </div>
+                      ))}
+                      <button className="process-button">
+                        View All Activity
+                      </button>
+                    </div>
                   </div>
-                  <p>{activity.activity}</p>
-                </div>
-              ))}
-              <button className="view-all-btn">View All Activity</button>
+                </section>
+              </div>
             </div>
-          </section>
+
+            <footer className="dashboard-footer">
+              <p>&copy; 2025 StudyGenix. All rights reserved.</p>
+            </footer>
+          </div>
         </div>
       </div>
-
-      <footer className="dashboard-footer">
-        <p>&copy; 2025 StudyGenix. All rights reserved.</p>
-      </footer>
     </div>
   );
 }
