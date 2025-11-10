@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../style/Career.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -695,7 +696,6 @@ const careerPaths = [
     category: "Technical Communication",
     description: "Create clear documentation for technical products.",
     matches: ["communicator", "user_impact", "conceptual_learner"],
-    skills: ["Technical writing", "Documentation", "User guides"],
     tools: ["Markdown", "Confluence", "Sphinx"],
     learningResource: {
       name: "Write the Docs",
@@ -711,14 +711,15 @@ const careerPaths = [
 // Components
 const Navbar = () => (
   <nav className="nav-bar">
-    <a href="/landing" className="nav-logo">
-      <i className="fas fa-brain"></i>Career AI
+    <a href="/" className="nav-logo">
+      <i className="fas fa-brain"></i>StudyGenie
     </a>
     <div className="nav-links">
-      <a href="/landing">Home</a>
-      <a href="/assessment">Assessment</a>
-      <a href="/career-details">Careers</a>
-      <a href="/auth">Logout</a>
+      <a href="/">Home</a>
+      {/* <a href="/assessment">Assessment</a>
+      <a href="/career-details">Careers</a> */}
+      <a href="/dashboard">Dashboard</a>
+      <a href="/login">Logout</a>
     </div>
   </nav>
 );
@@ -817,6 +818,7 @@ const CareerCard = ({ career }) => (
           href={career.learningResource.url}
           className="resource-link"
           target="_blank"
+          rel="noopener noreferrer"
         >
           Learn at {career.learningResource.name}
         </a>
@@ -861,6 +863,7 @@ const ProfileSummary = ({ insights }) => (
 
 // Main App Component
 const MapCareer = () => {
+  const navigate = useNavigate();
   const [userName, setUserName] = useState("Tech Explorer");
   const [assessmentStarted, setAssessmentStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -870,42 +873,55 @@ const MapCareer = () => {
   const [skippedQuestions, setSkippedQuestions] = useState(new Set());
   const [conditionalQuestionQueue, setConditionalQuestionQueue] = useState([]);
   const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     AOS.init({ duration: 800, once: true });
-    const token = localStorage.getItem("token");
-    if (!token || typeof token !== "string" || token.trim().length === 0) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      window.location.href = "/auth";
-      return;
-    }
 
-    fetch("http://localhost:5001/api/ver1/user/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.message || "Failed to fetch profile");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setUserName(data.data.name || "Tech Explorer");
-        console.log(
-          `Profile fetched: name=${data.data.name}, userId=${data.data._id}`
+    // Fetch user profile
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "http://localhost:5000/api/ver1/user/fetchcred",
+          {
+            method: "GET",
+            headers: {
+              Authorization: token ? `Bearer ${token}` : undefined,
+            },
+            credentials: "include",
+          }
         );
-      })
-      .catch((err) => {
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to fetch user data");
+        }
+        const data = await response.json();
+        setUserName(data.data.username || data.data.email || "Tech Explorer");
+        console.log(
+          `Profile fetched: name=${
+            data.data.username || data.data.email
+          }, userId=${data.data._id}`
+        );
+        setLoading(false);
+      } catch (err) {
         console.error("Profile fetch error:", err.message);
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-        window.location.href = "/auth";
-      });
-  }, []);
+        setError(err.message);
+        setLoading(false);
+        if (
+          err.message.includes("Unauthorized") ||
+          err.message.includes("Failed to fetch user data")
+        ) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          navigate("/login", { replace: true });
+        }
+      }
+    };
+
+    fetchUser();
+  }, [navigate]);
 
   const startAssessment = () => {
     setAssessmentStarted(true);
@@ -1020,22 +1036,17 @@ const MapCareer = () => {
 
   const submitAssessment = async () => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    if (!token || typeof token !== "string" || token.trim().length === 0) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      window.location.href = "/auth";
-      return;
-    }
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5001/api/ver1/user/submit-assessment",
+        "http://localhost:5000/api/ver1/user/submit-assessment",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token ? `Bearer ${token}` : undefined,
           },
+          credentials: "include",
           body: JSON.stringify({ responses: userResponses }),
         }
       );
@@ -1051,12 +1062,12 @@ const MapCareer = () => {
       setError(error.message);
       setLoading(false);
       if (
-        error.message.includes("No token provided") ||
-        error.message.includes("Invalid token")
+        error.message.includes("Unauthorized") ||
+        error.message.includes("No token provided")
       ) {
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
-        window.location.href = "/auth";
+        navigate("/login", { replace: true });
       }
     }
   };
@@ -1213,92 +1224,103 @@ const MapCareer = () => {
             <div className="spinner"></div>
           </div>
         )}
-        <header data-aos="fade-down">
-          <h1>Discover Your Tech Career Path</h1>
-          <p className="user-greeting">
-            Hello, {userName}! Let's find your perfect career path.
-          </p>
-        </header>
-        {!assessmentStarted && !results && (
-          <button
-            className="start-button"
-            onClick={startAssessment}
-            data-aos="zoom-in"
-          >
-            Start Assessment
-          </button>
-        )}
-        {assessmentStarted && (
-          <div className="assessment-box" data-aos="fade-up">
-            <div className="progress-container">
-              <div className="progress-text">
-                Question {currentQuestionIndex + 1} of {totalQuestions}
+        {error && <div className="error-message">{error}</div>}
+        {!loading && (
+          <>
+            <header data-aos="fade-down">
+              <h1>Discover Your Tech Career Path</h1>
+              <p className="user-greeting">
+                Hello, {userName}! Let's find your perfect career path.
+              </p>
+            </header>
+            {!assessmentStarted && !results && (
+              <button
+                className="start-button"
+                onClick={startAssessment}
+                data-aos="zoom-in"
+              >
+                Start Assessment
+              </button>
+            )}
+            {assessmentStarted && (
+              <div className="assessment-box" data-aos="fade-up">
+                <div className="progress-container">
+                  <div className="progress-text">
+                    Question {currentQuestionIndex + 1} of {totalQuestions}
+                  </div>
+                  <div className="progress-bar">
+                    <div
+                      className="progress"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  <div className="progress-percentage">
+                    {Math.round(progress)}%
+                  </div>
+                </div>
+                <QuestionContainer
+                  question={questionSequence[currentQuestionIndex]}
+                  selectedOptions={selectedOptions}
+                  setSelectedOptions={setSelectedOptions}
+                  currentIndex={currentQuestionIndex}
+                  totalQuestions={totalQuestions}
+                />
+                {error && <div className="error-message">{error}</div>}
+                <div className="action-buttons">
+                  <button
+                    className="btn btn-back"
+                    style={{
+                      display: currentQuestionIndex > 0 ? "block" : "none",
+                    }}
+                    onClick={handleBack}
+                  >
+                    Back
+                  </button>
+                  <button className="btn btn-skip" onClick={handleSkip}>
+                    Skip
+                  </button>
+                  <button
+                    className={`btn ${
+                      currentQuestionIndex === questionSequence.length - 1 &&
+                      conditionalQuestionQueue.length === 0
+                        ? "btn-submit"
+                        : "btn-next"
+                    }`}
+                    onClick={handleNext}
+                  >
+                    {currentQuestionIndex === questionSequence.length - 1 &&
+                    conditionalQuestionQueue.length === 0
+                      ? "Submit"
+                      : "Continue"}
+                  </button>
+                </div>
               </div>
-              <div className="progress-bar">
-                <div
-                  className="progress"
-                  style={{ width: `${progress}%` }}
-                ></div>
+            )}
+            {results && (
+              <div className="results-container" data-aos="fade-up">
+                <div className="results-header">
+                  <h2>Your Career Recommendations</h2>
+                </div>
+                {results.map((career) => (
+                  <CareerCard key={career.title} career={career} />
+                ))}
+                <ProfileSummary
+                  insights={generateProfileSummary(userResponses)}
+                />
+                <div className="results-actions">
+                  <button className="btn-retake" onClick={startAssessment}>
+                    Retake Assessment
+                  </button>
+                  <button
+                    className="btn-schedule"
+                    onClick={() => navigate("/landing")}
+                  >
+                    Schedule a Consultation
+                  </button>
+                </div>
               </div>
-              <div className="progress-percentage">{Math.round(progress)}%</div>
-            </div>
-            <QuestionContainer
-              question={questionSequence[currentQuestionIndex]}
-              selectedOptions={selectedOptions}
-              setSelectedOptions={setSelectedOptions}
-              currentIndex={currentQuestionIndex}
-              totalQuestions={totalQuestions}
-            />
-            {error && <div className="error-message">{error}</div>}
-            <div className="action-buttons">
-              <button
-                className="btn btn-back"
-                style={{ display: currentQuestionIndex > 0 ? "block" : "none" }}
-                onClick={handleBack}
-              >
-                Back
-              </button>
-              <button className="btn btn-skip" onClick={handleSkip}>
-                Skip
-              </button>
-              <button
-                className={`btn ${
-                  currentQuestionIndex === questionSequence.length - 1 &&
-                  conditionalQuestionQueue.length === 0
-                    ? "btn-submit"
-                    : "btn-next"
-                }`}
-                onClick={handleNext}
-              >
-                {currentQuestionIndex === questionSequence.length - 1 &&
-                conditionalQuestionQueue.length === 0
-                  ? "Submit"
-                  : "Continue"}
-              </button>
-            </div>
-          </div>
-        )}
-        {results && (
-          <div className="results-container" data-aos="fade-up">
-            <div className="results-header">
-              <h2>Your Career Recommendations</h2>
-            </div>
-            {results.map((career) => (
-              <CareerCard key={career.title} career={career} />
-            ))}
-            <ProfileSummary insights={generateProfileSummary(userResponses)} />
-            <div className="results-actions">
-              <button className="btn-retake" onClick={startAssessment}>
-                Retake Assessment
-              </button>
-              <button
-                className="btn-schedule"
-                onClick={() => (window.location.href = "/landing")}
-              >
-                Schedule a Consultation
-              </button>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

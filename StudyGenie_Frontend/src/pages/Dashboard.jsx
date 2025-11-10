@@ -19,13 +19,6 @@ import {
 } from "react-icons/fa";
 import "../style/Dashboard.css";
 
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-  return null;
-};
-
 function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -37,20 +30,13 @@ function Dashboard() {
 
   // Fetch user data and history
   const fetchUserData = useCallback(async () => {
-    const accessToken = getCookie("accessToken");
-    if (!accessToken) {
-      setError("Please log in to view your dashboard.");
-      setLoading(false);
-      navigate("/login");
-      return;
-    }
-
     try {
       // Fetch user info
       const userResponse = await fetch(
         "http://localhost:5000/api/ver1/user/fetchcred",
         {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          method: "GET",
+          credentials: "include", // Send cookies
         }
       );
       if (!userResponse.ok) {
@@ -59,11 +45,12 @@ function Dashboard() {
       const userData = await userResponse.json();
       setUser(userData.data);
 
-      // Fetch history and quiz results
+      // Fetch history
       const historyResponse = await fetch(
         "http://localhost:5000/api/ver1/user/history",
         {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          method: "GET",
+          credentials: "include",
         }
       );
       if (!historyResponse.ok) {
@@ -72,11 +59,12 @@ function Dashboard() {
       const historyData = await historyResponse.json();
       setHistory(historyData.data || []);
 
-      // Fetch quiz results (assuming an endpoint to retrieve all quiz results)
+      // Fetch quiz results
       const quizResponse = await fetch(
         "http://localhost:5000/api/ver1/pdf/quiz-results",
         {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          method: "GET",
+          credentials: "include",
         }
       );
       if (!quizResponse.ok) {
@@ -87,10 +75,14 @@ function Dashboard() {
 
       setLoading(false);
     } catch (err) {
+      console.error("Fetch error:", err);
       setError(err.message);
       setLoading(false);
-      if (err.message.includes("Unauthorized")) {
-        navigate("/login");
+      if (
+        err.message.includes("Unauthorized") ||
+        err.message.includes("Failed to fetch user data")
+      ) {
+        navigate("/login", { replace: true });
       }
     }
   }, [navigate]);
@@ -141,15 +133,14 @@ function Dashboard() {
   const handleDeleteItem = async (vectorPath) => {
     if (window.confirm("Are you sure you want to delete this history item?")) {
       try {
-        const accessToken = getCookie("accessToken");
         const response = await fetch(
           "http://localhost:5000/api/ver1/pdf/delete",
           {
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
             },
+            credentials: "include",
             body: JSON.stringify({ vectorPath }),
           }
         );
@@ -177,9 +168,10 @@ function Dashboard() {
     },
     { id: "study", icon: FaBook, label: "Study Guides", path: "/study" },
     { id: "tutor", icon: FaBrain, label: "AI Tutor", path: "/tutor" },
-    { id: "progress", icon: FaChartBar, label: "Progress", path: "/progress" },
+    { id: "progress", icon: FaChartBar, label: "Career", path: "/career" },
     { id: "profile", icon: FaUser, label: "Profile", path: "/profile" },
     { id: "settings", icon: FaCog, label: "Settings", path: "/settings" },
+    { id: "leaderboard", icon: FaTrophy, label: "Leader Board", path: "/leaderboard" },
   ];
 
   // Calculate dynamic stats
@@ -263,7 +255,7 @@ function Dashboard() {
               <p className="logo-subtitle">Smart Learning</p>
               {user && (
                 <p className="text-sm text-gray-600">
-                  Welcome, {user.username}
+                  Welcome, {user.username || user.email}
                 </p>
               )}
             </div>

@@ -7,6 +7,9 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import StudyGenieUpload from "./pages/UploadFile"
 import MapCareer from "./pages/MapCareer";
+import OnboardingPage from "./pages/OnboardingPage";
+import Profile from "./pages/Profile";
+import Leaderboard from "./pages/LeaderBoard";
 
 function App ()
 {
@@ -38,7 +41,19 @@ function App ()
         {
             path:'/career',
             element:<MapCareer />
-        }
+        },
+        {
+            path:'/onboarding',
+            element:<OnboardingPage />
+        },
+        {
+            path:'/profile',
+            element:<Profile />
+        },
+        {
+            path:'/leaderboard',
+            element:<Leaderboard />
+        },
 
     ])
     return (

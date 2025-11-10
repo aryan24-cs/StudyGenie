@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.12",
     "aos": "^2.3.4",
     "axios": "^1.10.0",
     "lucide-react": "^0.541.0",
@@ -19,6 +20,7 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.8.1",
     "react-tsparticles": "^2.12.2",
+    "tailwindcss": "^4.1.12",
     "tsparticles": "^3.9.1",
     "tsparticles-engine": "^2.12.0"
   },

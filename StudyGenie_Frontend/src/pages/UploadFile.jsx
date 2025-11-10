@@ -17,6 +17,7 @@ import {
   FaPlus,
   FaTrash,
   FaEye,
+  FaTrophy,
 } from "react-icons/fa";
 import "../style/StudyGenieUpload.css";
 
@@ -365,9 +366,10 @@ function StudyGenieUpload() {
     },
     { id: "study", icon: FaBook, label: "Study Guides", path: "/study" },
     { id: "tutor", icon: FaBrain, label: "AI Tutor", path: "/tutor" },
-    { id: "progress", icon: FaChartBar, label: "Progress", path: "/progress" },
+    { id: "progress", icon: FaChartBar, label: "Career", path: "/career" },
     { id: "profile", icon: FaUser, label: "Profile", path: "/profile" },
     { id: "settings", icon: FaCog, label: "Settings", path: "/settings" },
+    { id: "leaderboard", icon: FaTrophy, label: "Leader Board", path: "/leaderboard" },
   ];
 
   const processFiles = () => {
